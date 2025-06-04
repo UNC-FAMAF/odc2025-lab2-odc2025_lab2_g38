@@ -10,44 +10,26 @@
 
 main:
 	// x0 contiene la direccion base del framebuffer
- 	mov x20, x0	// Guarda la dirección base del framebuffer en x20
+ 	mov x23, x0	// Guarda la dirección base del framebuffer en x23
 	//---------------- CODE HERE ------------------------------------
 
-	movz x10, 0xC7, lsl 16
-	movk x10, 0x1585, lsl 00
+	// Pinta el cielo de día
+	bl		paint_sky_day
 
-	mov x2, SCREEN_HEIGH         // Y Size
-loop1:
-	mov x1, SCREEN_WIDTH         // X Size
-loop0:
-	stur w10,[x0]  // Colorear el pixel N
-	add x0,x0,4	   // Siguiente pixel
-	sub x1,x1,1	   // Decrementar contador X
-	cbnz x1,loop0  // Si no terminó la fila, salto
-	sub x2,x2,1	   // Decrementar contador Y
-	cbnz x2,loop1  // Si no es la última fila, salto
+	// Pinta el sol
+	bl		paint_sun
 
-	// Ejemplo de uso de gpios
-	mov x9, GPIO_BASE
+	// Pinta las lomas/terreno
+	bl		fore_ground
 
-	// Atención: se utilizan registros w porque la documentación de broadcom
-	// indica que los registros que estamos leyendo y escribiendo son de 32 bits
+	// Pinta la casita
+	bl		paint_casita
 
-	// Setea gpios 0 - 9 como lectura
-	str wzr, [x9, GPIO_GPFSEL0]
+	// ── 2) DIBUJAR INSCRIPCIÓN “OdC 2025” ────────────────────────────────
+	bl		draw_text_OdC2025
 
-	// Lee el estado de los GPIO 0 - 31
-	ldr w10, [x9, GPIO_GPLEV0]
-
-	// And bit a bit mantiene el resultado del bit 2 en w10
-	and w11, w10, 0b10
-
-	// w11 será 1 si había un 1 en la posición 2 de w10, si no será 0
-	// efectivamente, su valor representará si GPIO 2 está activo
-	lsr w11, w11, 1
-
-	//---------------------------------------------------------------
-	// Infinite Loop
+	// ── 3) BUCLE INFINITO PARA MANTENER LA IMAGEN ────────────────────────
+	b		InfLoop
 
 InfLoop:
-	b InfLoop
+	b		InfLoop
