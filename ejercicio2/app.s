@@ -2,9 +2,7 @@
 	.equ SCREEN_HEIGH, 		480
 	.equ BITS_PER_PIXEL,  	32
 
-	.equ GPIO_BASE,      0x3f200000
-	.equ GPIO_GPFSEL0,   0x00
-	.equ GPIO_GPLEV0,    0x34
+  	.equ COLOR_YELLOW, 0xFFFF00
 
 	.globl main
 
@@ -27,24 +25,13 @@ loop0:
 	sub x2,x2,1	   // Decrementar contador Y
 	cbnz x2,loop1  // Si no es la última fila, salto
 
-	// Ejemplo de uso de gpios
-	mov x9, GPIO_BASE
-
-	// Atención: se utilizan registros w porque la documentación de broadcom
-	// indica que los registros que estamos leyendo y escribiendo son de 32 bits
-
-	// Setea gpios 0 - 9 como lectura
-	str wzr, [x9, GPIO_GPFSEL0]
-
-	// Lee el estado de los GPIO 0 - 31
-	ldr w10, [x9, GPIO_GPLEV0]
-
-	// And bit a bit mantiene el resultado del bit 2 en w10
-	and w11, w10, 0b10
-
-	// w11 será 1 si había un 1 en la posición 2 de w10, si no será 0
-	// efectivamente, su valor representará si GPIO 2 está activo
-	lsr w11, w11, 1
+ 	// Dibujar la inscripción "OdC 2025" 
+	// Se dibuja en una posición fija (parte superior izquierda) con un color amarillo.
+	mov x0, x20             // Framebuffer base
+	mov x1, #10             // Posición X
+	mov x2, #10             // Posición Y
+	mov w3, #COLOR_YELLOW   // Color del texto
+	bl draw_odc2025         // Llama a la función de draw_text.s.
 
 	//---------------------------------------------------------------
 	// Infinite Loop
