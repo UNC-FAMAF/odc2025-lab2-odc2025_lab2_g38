@@ -24,7 +24,7 @@ draw_odc2025:
     mov x21, x2 // y_pos inicial del texto
     mov w22, w3 // color del texto
 
-    // Dibujar 'O' (representado por un rectángulo)
+    // Dibujar 'O' 
     // Argumentos para draw_rectangle: fb_base, x_start, y_start, width, height, color
     //arriba
     mov x0, x19         // Pasa framebuffer_base
