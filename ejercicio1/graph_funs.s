@@ -11,8 +11,6 @@
     // >>>> ln 77  : paint_circle
     //
     // >>>> ln 122 : paint_line_hr
-    //
-    // >>>> ln 167 : set_pixel (--no se usa--)
     //----------------------------------------------- upper_half
 upper_half:
     sub sp,sp,#32                   // mem alloc
@@ -164,92 +162,4 @@ end_line:
     ret
     //----------------------------------------------- end paint line_hr
 
-    //----------------------------------------------- set_pixel
-    //
-    //  funciona pero no tiene uso  ^\(,_,)/^
-    //
-    // 
-set_pixel:
-    sub sp,sp,#40                   // mem alloc
-
-    str lr,[sp]                     // push to sp
-    str x0,[sp,#8]                  // push to sp
-    str x1,[sp,#16]                 // push to sp
-    str x20,[sp,#24]                // push to sp
-    str x21,[sp,#32]    
-
-    mov x0,x23                      // x0 = FRAME_BUFFER
-    //                              x16 = x
-    //                              x15 = y
-    //                              w10 = color   
-
-    mov x20,x16
-    mov x21,x15
-
-    mov x1,SCREEN_WIDTH             // para poder usar instruccion mul
-    mul x21,x21,x1                  // multiplico posicion en y por la cantidad de pixeles en X para encontrar la altura correcta
-    add x21,x21,x20                 // sumo la posicion en X para obtener la celda correspondiente al punto
-    lsl x21,x21,2                   // multiplico el resultado por 4 para corresponder al lugar correcto en FRAME_BUFFER
-    add x0,x0,x21                   // finalmente corremos la base del FRAME_BUFFER al pixel deseado
-
-    stur w10,[x0]                   // coloreamos el pixel (x16,x15) | (x,y)
-
-    ldr lr,[sp]                     // pop from sp
-    ldr x0,[sp,#8]                  // pop from sp
-    ldr x1,[sp,#16]                 // pop from sp
-    ldr x20,[sp,#24]                // pop from sp
-    ldr x21,[sp,#32]                // pop from sp
-
-    add sp,sp,#40               // free mem
-    ret
-    //----------------------------------------------- end set_pixel
-
-    // paint_rect
-
-paint_rect:
-    sub     sp, sp, #32           // reservar espacio en stack
-    str     lr,     [sp]          // guardar lr
-    str     x1,     [sp, #8]      // guardar x1 (columna)
-    str     x2,     [sp, #16]     // guardar x2 (fila)
-    str     x3,     [sp, #24]     // guardar x3 (ancho)
-    str     x4,     [sp, #32]     // guardar x4 (alto)
-
-    mov     x20, x2              // x20 = fila actual
-loop_priny:
-    // Si ya no quedan filas (alto = 0), salir
-    cbz     x4, end_priny
-
-    // Calcular offset de (x1, x20) en bytes:
-    //   offset = ((Y * SCREEN_WIDTH) + X) * 4
-    mov     x21, x20             // x21 = Y_actual
-    mov     x22, SCREEN_WIDTH    // x22 = 640
-    mul     x21, x21, x22        // x21 = Y_actual * 640
-    add     x21, x21, x1         // x21 = Y_actual*640 + X_inicial
-    lsl     x21, x21, #2         // x21 = ((Y*640 + X) * 4 bytes)
-
-    mov     x0, x23              // x0 = base FRAME_BUFFER
-    add     x0, x0, x21          // x0 apunta al primer pixel de la fila y columna
-
-    mov     x22, x3              // x22 = ancho del rectángulo
-loop_prinx:
-    cbz     x22, end_prinx       // si ancho = 0, terminar esta fila
-    stur    w10, [x0]            // colorear pixel con w10
-    add     x0, x0, #4           // avanzar 1 píxel (4 bytes)
-    sub     x22, x22, #1         // ancho--
-    b       loop_prinx
-end_prinx:
-
-    add     x20, x20, #1         // Y_actual++
-    sub     x4, x4, #1           // filas restantes--
-    b       loop_priny
-
-end_priny:
-    // Restaurar registros y salir
-    ldr     lr,     [sp]
-    ldr     x1,     [sp, #8]
-    ldr     x2,     [sp, #16]
-    ldr     x3,     [sp, #24]
-    ldr     x4,     [sp, #32]
-    add     sp,     sp, #32
-    ret
-    //-----------------------------------------------
+    
