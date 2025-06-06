@@ -3,118 +3,115 @@
     .equ SCREEN_HEIGH,   480
     .equ BITS_PER_PIXEL, 32
 
-    //-----------------------------------------------
-    // paint_sun
-    // Dibuja un sol con varios círculos concéntricos,
-    // reduciendo radio y oscureciendo el color.
-.globl paint_sun        // Exporta la etiqueta para que sea visible
-paint_sun:
-    sub     sp, sp, #48               // reservar espacio en stack
-    str     lr, [sp]                  // guardar lr
-    str     x5, [sp, #8]              // guardar Y del centro
-    str     x6, [sp, #16]             // guardar X del centro
-    str     x7, [sp, #24]             // guardar r²
-    str     x8, [sp, #32]             // guardar radio
-    str     x10,[sp, #40]             // guardar color
+    //----------------------------------------------- paint_moon
+    //
+    //  pinta una luna de color amarillo 
+    //
+paint_moon:
+    sub sp,sp,#48                   // mem alloc
+    str lr,[sp]                     // push to sp
+    str x5,[sp,#8]                  // push to sp
+    str x6,[sp,#16]                 // push to sp
+    str x7,[sp,#24]                 // push to sp
+    str x8,[sp,#32]                 // push to sp
+    str x10,[sp,#40]                // push to sp
 
-    // Círculo grande (color 0x00FFDAFF, r = 120)
-    movz    x10, #0x00FF, lsl 16      // w10 = 0x00FF0000
-    movk    x10, #0xDAFF              // w10 = 0x00FFDAFF
-    mov     x8, 120                   // radio inicial
-    mul     x7, x8, x8                // r²
-    mov     x5, 240                   // Y del centro
-    mov     x6, 110                   // X del centro
-    bl      paint_circle              // invoca paint_circle
+    // CIRCULOS LUNA
 
-    // Círculo intermedio (r = 100, color 0x00FFC44E)
-    sub     x8, x8, #20               // nuevo radio = 100
-    mul     x7, x8, x8
-    movz    x10, #0x00FF, lsl 16      // w10 = 0x00FF0000
-    movk    x10, #0xC44E              // w10 = 0x00FFC44E
-    bl      paint_circle
+    movz x10,#0xFA,lsl 16         //color
+    movk x10,#0xF328                //color
 
-    // Círculo siguiente (r = 80, color 0x00FFB829)
-    sub     x8, x8, #20               // nuevo radio = 80
-    mul     x7, x8, x8
-    movz    x10, #0x00FF, lsl 16      // w10 = 0x00FF0000
-    movk    x10, #0xB829              // w10 = 0x00FFB829
-    bl      paint_circle
+    mov x5,400                      // Y
+    mov x6,550                      // X
 
-    // Círculo más pequeño (r = 70, color 0x00FFAA00)
-    sub     x8, x8, #10               // nuevo radio = 70
-    mul     x7, x8, x8
-    movz    x10, #0x00FF, lsl 16      // w10 = 0x00FF0000
-    movk    x10, #0xAA00              // w10 = 0x00FFAA00
-    bl      paint_circle
+    mov x8,80                       // r
+    mul x7,x8,x8                    // r^2
 
-    // Restaurar registros y volver
-    ldr     lr, [sp]
-    ldr     x5, [sp, #8]
-    ldr     x6, [sp, #16]
-    ldr     x7, [sp, #24]
-    ldr     x8, [sp, #32]
-    ldr     x10,[sp, #40]
-    add     sp, sp, #48
+    bl paint_circle
+
+    movz x10,#0xFC,lsl 16         //color
+    movk x10,#0xF760                //color
+
+    sub x8,x8,5                     // disminuyo radio
+    mul x7,x8,x8                    // r^2
+
+    bl paint_circle
+
+    movz x10,#0xF5,lsl 16         //color
+    movk x10,#0xF17C                //color
+
+    sub x8,x8,20                    // disminuyo radio
+    mul x7,x8,x8                    // r^2
+
+    bl paint_circle
+
+    ldr lr,[sp]                     // pop from sp
+    ldr x5,[sp,#8]                  // pop from sp
+    ldr x6,[sp,#16]                 // pop from sp
+    ldr x7,[sp,#24]                 // pop from sp
+    ldr x8,[sp,#32]                 // pop from sp
+    ldr x10,[sp,#40]                // pop from sp
+
+    add sp,sp,#48                   // mem free
     ret
-    //-----------------------------------------------
+    //----------------------------------------------- end paint_moon
 
 
-    //-----------------------------------------------
-    // paint_sky_day
-    // Pinta el cielo en modo “día”:
-    // 1) Mitad inferior color oscuro
-    // 2) Mitad superior color claro
-    // 3) Rayas horizontales dispersas (nubes)
-.globl paint_sky_day    // Exporta la etiqueta para que sea visible 
-paint_sky_day:
-    sub     sp, sp, #64                // reservar espacio en stack
-    str     lr, [sp]                   // guardar lr
-    str     x8, [sp, #8]               // (no usado aquí)
-    str     x9, [sp, #16]              // (no usado aquí)
-    str     x10,[sp, #24]              // guardar color
-    str     x11,[sp, #32]              // offset entre rayas
-    str     x15,[sp, #40]              // Y inicial de rayas
+    //----------------------------------------------- paint_sky_night
+    //
+    //  pinta el cielo de azules
+    //
+paint_sky_night:
+    sub sp,sp,#64                               // alloc mem
+    str lr,[sp]                                 // push to sp
+    str x16,[sp,#8]                             // push to sp
+    str x20,[sp,#16]                            // push to sp
+    str x10,[sp,#24]                            // push to sp
+    str x11,[sp,#32]                            // push to sp
+    str x15,[sp,#40]                            // push to sp
+    
 
-    // Fondo inferior (0x00FFE573)
-    movz    w10, #0x00FF, lsl 16       // w10 = 0x00FF0000
-    movk    w10, #0xE573              // w10 = 0x00FFE573
-    bl      background_paint           // pinta toda la pantalla
+    movz w10,#0x17,lsl 16                     //
+    movk w10,#0x0972                            //
 
-    // Fondo superior (0x00FFFA99)
-    movz    w10, #0x00FF, lsl 16       // w10 = 0x00FF0000
-    movk    w10, #0xFA99              // w10 = 0x00FFFA99
-    bl      upper_half                 // pinta mitad superior
+    bl background_paint                         //
 
-    // Rayas horizontales (0x00FFE573)
-    movz    w10, #0x00FF, lsl 16       // w10 = 0x00FF0000
-    movk    w10, #0xE573              // w10 = 0x00FFE573
-    mov     x16, 0                    // X inicio
-    mov     x20, 640                  // X fin
-    mov     x15, 240                  // Y inicial (mitad pantalla)
-    mov     x11, 0                    // offset entre rayas
+    movz w10,#0x15,lsl 16                     //
+    movk w10,#0x0869                            //
 
-loop_hor_lines:
-    cbz     x15, end_hor_line         // si Y = 0, terminar
-    bl      paint_line_hr             // pinta 1 px de grosor
-    sub     x15, x15, #1
-    bl      paint_line_hr             // segundo px de grosor
-    sub     x15, x15, #1
-    bl      paint_line_hr             // tercer px de grosor
-    sub     x15, x15, x11             // bajar según offset
-    add     x11, x11, #2              // aumentar separación
-    b       loop_hor_lines
+    bl upper_half                               //
 
-end_hor_line:
-    // Restaurar registros y volver
-    ldr     lr,  [sp]
-    ldr     x8,  [sp, #8]
-    ldr     x9,  [sp, #16]
-    ldr     x11, [sp, #24]
-    ldr     x10, [sp, #32]
-    ldr     x12, [sp, #40]
-    add     sp,  sp, #64
+    movz w10,#0x0E,lsl 16                     //
+    movk w10,#0x054A                            //
+
+    mov x16,0                                   //
+	mov x20,640                                 //
+    mov x15,240                                 //                    
+    mov x11,0                                   //                
+
+loop_hor_lines_n:                               //
+    cbz x15, end_hor_line_n                     //
+    bl paint_line_hr                            //
+    sub x15,x15,1                               //
+    bl paint_line_hr                            //
+    sub x15,x15,1                               //
+    bl paint_line_hr                            //
+    sub x15,x15,x11                             //
+    add x11,x11,2                               //
+    b loop_hor_lines_n                          //
+
+end_hor_line_n:                                 //
+
+    ldr lr,[sp]                                 // pop from sp
+    ldr x8,[sp,#8]                              // pop from sp
+    ldr x9,[sp,#16]                             // pop from sp
+    ldr x11,[sp,#24]                            // pop from sp
+    ldr x10,[sp,#32]                            // pop from sp
+    ldr x12,[sp,#40]                            // pop from sp
+
+    add sp,sp,#64                               // mem free
     ret
-    //-----------------------------------------------
+    //----------------------------------------------- end paint_sky_night
 
 
     //-----------------------------------------------
@@ -386,199 +383,4 @@ end_casita_chim:
     add     sp,  sp, #40
     ret
 
-    .globl draw_text_OdC2025
-
-draw_text_OdC2025:
-    // Color del texto = blanco (0x00FFFFFF)
-    movz    w10, #0x00FF, lsl 16    // w10 = 0x00FF0000
-    movk    w10, #0x00FF            // w10 = 0x00FFFFFF
-
-    // ─── LETRA “O” (en 50,400; ancho=40, alto=80) ───
-    mov     x1, #50
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #50
-    mov     x2, #475    // 400 + 80 – 5
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #50
-    mov     x2, #405    // 400 + 5
-    mov     x3, #5
-    mov     x4, #70    // 80 – 2×5
-    bl      paint_rect
-
-    mov     x1, #85    // 50 + 40 – 5
-    mov     x2, #405
-    mov     x3, #5
-    mov     x4, #70
-    bl      paint_rect
-
-    // ─── LETRA “d” (en 110,400; ancho=40, alto=80) ───
-    mov     x1, #110
-    mov     x2, #400
-    mov     x3, #5
-    mov     x4, #80
-    bl      paint_rect
-
-    mov     x1, #110
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #110
-    mov     x2, #475    // 400 + 80 – 5
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #145    // 110 + 40 – 5
-    mov     x2, #435    // 400 + 35
-    mov     x3, #5
-    mov     x4, #40     // 80 – 2×5 – 35
-    bl      paint_rect
-
-    // ─── LETRA “C” (en 170,400; ancho=40, alto=80) ───
-    mov     x1, #170
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #170
-    mov     x2, #475
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #170
-    mov     x2, #405    // 400 + 5
-    mov     x3, #5
-    mov     x4, #70
-    bl      paint_rect
-
-    // ─── LETRA “2” (en 230,400; ancho=40, alto=80) ───
-    mov     x1, #230
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #265    // 230 + 40 – 5
-    mov     x2, #405    // 400 + 5
-    mov     x3, #5
-    mov     x4, #35     // mitad superior
-    bl      paint_rect
-
-    mov     x1, #230
-    mov     x2, #435    // 400 + 35
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #230
-    mov     x2, #435
-    mov     x3, #5
-    mov     x4, #35     // mitad inferior
-    bl      paint_rect
-
-    mov     x1, #230
-    mov     x2, #475
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    // ─── LETRA “0” (en 290,400; ancho=40, alto=80) ───
-    mov     x1, #290
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #290
-    mov     x2, #475
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #290
-    mov     x2, #405    // 400 + 5
-    mov     x3, #5
-    mov     x4, #70     // 80 – 2×5
-    bl      paint_rect
-
-    mov     x1, #325    // 290 + 40 – 5
-    mov     x2, #405
-    mov     x3, #5
-    mov     x4, #70
-    bl      paint_rect
-
-    // ─── LETRA “2” (segunda vez en 350,400) ───
-    mov     x1, #350
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #385    // 350 + 40 – 5
-    mov     x2, #405
-    mov     x3, #5
-    mov     x4, #35
-    bl      paint_rect
-
-    mov     x1, #350
-    mov     x2, #435    // 400 + 35
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #350
-    mov     x2, #435
-    mov     x3, #5
-    mov     x4, #35
-    bl      paint_rect
-
-    mov     x1, #350
-    mov     x2, #475
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    // ─── LETRA “5” (en 410,400; ancho=40, alto=80) ───
-    mov     x1, #410
-    mov     x2, #400
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #410
-    mov     x2, #405    // 400 + 5
-    mov     x3, #5
-    mov     x4, #35
-    bl      paint_rect
-
-    mov     x1, #410
-    mov     x2, #435    // 400 + 35
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    mov     x1, #445    // 410 + 40 – 5
-    mov     x2, #435
-    mov     x3, #5
-    mov     x4, #40     // 80 – 2×5 – 35
-    bl      paint_rect
-
-    mov     x1, #410
-    mov     x2, #475
-    mov     x3, #40
-    mov     x4, #5
-    bl      paint_rect
-
-    ret
 
