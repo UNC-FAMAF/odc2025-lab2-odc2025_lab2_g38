@@ -1,21 +1,166 @@
-// Funciones gráficas de bajo nivel.
+	.equ SCREEN_WIDTH,   640
+	.equ SCREEN_HEIGH,   480
+    .equ BITS_PER_PIXEL, 32
+    
+    //----------------------------------------------- graph functions list
+    //
+    // >>>> ln 16  : upper_half
+    //
+    // >>>> ln 47  : background_paint
+    //
+    // >>>> ln 77  : paint_circle
+    //
+    // >>>> ln 122 : paint_line_hr
+    //
+    //----------------------------------------------- upper_half
+upper_half:
+    sub sp,sp,#32                   // mem alloc
+    str lr,[sp]                     // push to sp
+    str x1,[sp,#8]                  // push to sp
+    str x2,[sp,#16]                 // push to sp
+    str x0,[sp,#24]                 // push to sp
 
-// Definiciones de constantes de la pantalla
-.equ SCREEN_WIDTH, 640
-.equ SCREEN_HEIGHT, 480
-.equ PIXEL_SIZE, 4 // Cada píxel es de 32 bits (4 bytes) [4]
+    mov x0,x23
 
-.text
-.globl draw_pixel // Declara draw_pixel como global para ser llamada desde otros archivos.
-
-// draw_pixel(framebuffer_base (x0), x (x1), y (x2), color (w3))
-// Dibuja un píxel individual en la pantalla.
-draw_pixel:
-    mov x5, #SCREEN_WIDTH
-    mul x4, x2, x5         // x4 = y * SCREEN_WIDTH
-    add x4, x4, x1         // x4 = (y * SCREEN_WIDTH) + x
-    mov x5, #PIXEL_SIZE
-    mul x4, x4, x5         // x4 = (y * SCREEN_WIDTH + x) * 4
-    add x0, x0, x4
-    str w3, [x0]
+    mov x2, SCREEN_HEIGH            // Y Size
+    lsr x2,x2,1
+loop_uh1: 
+	mov x1, SCREEN_WIDTH            // X Size
+loop_uh0:
+	stur w10,[x0]				     // Colorear el pixel N
+	add x0,x0,4                      // Siguiente pixel
+	sub x1,x1,1                      // Decrementar contador X
+	cbnz x1,loop_uh0                 // Si no terminó la fila, salto
+	sub x2,x2,1                      // Decrementar contador Y
+	cbnz x2,loop_uh1                 // Si no es la última fila, salto
+    
+    ldr lr,[sp]                      // pop from sp                
+    ldr x1,[sp,#8]                   // pop from sp
+    ldr x2,[sp,#16]                  // pop from sp
+    ldr x0,[sp,#24]                  // pop from sp
+    add sp,sp,#32                    // mem free
     ret
+    //----------------------------------------------- end upper_half
+
+
+    //----------------------------------------------- background_paint
+background_paint:
+    sub sp,sp,#32                   // mem alloc
+    str lr,[sp]                     // push to sp
+    str x1,[sp,#8]                  // push to sp
+    str x2,[sp,#16]                 // push to sp
+    str x0,[sp,#24]                 // push to sp
+
+    mov x0,x23
+
+    mov x2, SCREEN_HEIGH            // Y Size
+loop1: 
+	mov x1, SCREEN_WIDTH            // X Size
+loop0:
+	stur w10,[x0]				    // Colorear el pixel N
+	add x0,x0,4                     // Siguiente pixel
+	sub x1,x1,1                     // Decrementar contador X
+	cbnz x1,loop0                   // Si no terminó la fila, salto
+	sub x2,x2,1                     // Decrementar contador Y
+	cbnz x2,loop1                   // Si no es la última fila, salto
+    
+    ldr lr,[sp]                     // pop from sp
+    ldr x1,[sp,#8]                  // pop from sp
+    ldr x2,[sp,#16]                 // pop from sp
+    ldr x0,[sp,#24]                 // pop from sp
+    add sp,sp,#32                   // mem free
+    ret
+    //----------------------------------------------- end background_paint
+
+
+    //----------------------------------------------- paint_circle
+paint_circle:
+    sub sp,sp,#48                   // mem alloc
+
+    str lr,[sp]                     // push to sp
+    str x8,[sp,#8]                  // push to sp
+    str x9,[sp,#16]                 // push to sp
+    str x1,[sp,#24]                 // push to sp 
+    str x2,[sp,#32]                 // push to sp
+    str x0,[sp,#40]                 // push to sp 
+
+    movz x8,0                       // init a 0
+    movz x9,0                       // init a 0
+    mov x0,x23
+
+    mov x2, SCREEN_HEIGH            // Y Size
+loop1_crc:  
+	mov x1, SCREEN_WIDTH            // X Size
+loop0_crc:
+    sub x8,x5,x2                    // dist en Y al centro
+    sub x9,x6,x1                    // dist en X al centro
+    mul x8,x8,x8                    // a^2 -- distancia en Y al cuadrado
+    mul x9,x9,x9                    // b^2 -- distancia en X al cuadrado
+    add x9,x9,x8                    // a^2 + b^2 -- suma del cuadrado de las distancias
+    cmp x9,x7                       // comparo distancias con radio
+    b.hi cont_crc                   // si a^2 + b^2 > r^2 => (a,b) ∉  a la imagen
+	stur w10,[x0]				    // Colorear el pixel N
+cont_crc:   
+    add x0,x0,4                     // Siguiente pixel
+	sub x1,x1,1                     // Decrementar contador X
+	cbnz x1,loop0_crc               // Si no terminó la fila, salto
+	sub x2,x2,1                     // Decrementar contador Y
+	cbnz x2,loop1_crc               // Si no es la última fila, salto  
+
+    ldr lr,[sp]                     // pop from sp
+    ldr x8,[sp,#8]                  // pop from sp
+    ldr x9,[sp,#16]                 // pop from sp
+    ldr x1,[sp,#24]                 // pop from sp 
+    ldr x2,[sp,#32]                 // pop from sp
+    ldr x0,[sp,#40]                 // pop from sp 
+
+    add sp,sp,#48                   // free mem
+    ret
+    //----------------------------------------------- end paint_circle
+
+    //----------------------------------------------- paint_line_hr
+    //
+    //
+    //
+paint_line_hr:
+    sub sp,sp,#64                       // mem alloc
+    str lr,[sp]                         // push to sp
+    str x0,[sp,#8]                      // push to sp base FRAME_BUFFER
+    str x18,[sp,#24]                    // push to sp altura Y
+    str x17,[sp,#32]                    // push to sp auxiliar multiplicacion
+    str x22,[sp,#16]                    // push to sp start X
+    str x24,[sp,#48]                    // push to sp end X
+
+    mov x22,x16                         // start X -- No modifica x16
+    mov x24,x20                         // end X   -- No modifica x20
+    mov x18,x15                         // altura Y-- No modifica x15
+    mov x0,x23                          // base FRAME_BUFFER
+
+    mov x17,SCREEN_WIDTH                // auxiliar multiplicacion
+    mul x18,x18,x17                     // multiplicar Y por SCREEN_WIDTH nos da el primer pixel de la fila Y
+    add x18,x18,x22                     // sumar X a Y nos da el pixel (x,y)
+    lsl x18,x18,2                       // multiplicamos el resultado por 4 ya que cada pixel son 32bits = 4bytes
+
+    add x0,x0,x18                       // sumamos el resultado a la base de FRAME_BUFFER
+    sub x24,x24,x22                     // reutilizamos x24 nuevamente como contador para el ciclo, x24 - x22 = cantidad de px a colorear
+
+loop_line:                              // en el loop se colorean x24 px a partir de x22 en la altura x18
+    cbz x24,end_line                    // while x24 != 0
+    stur w10,[x0]                       // colorea el base de FRAME_BUFFER
+    add x0,x0,4                         // mueve la base de FRAME_BUFFER 1 px
+    sub x24,x24,1                       // decrementa el contador
+    b loop_line                         // fin loop
+end_line:
+
+    ldr lr,[sp]                         // pop from sp
+    ldr x0,[sp,#8]                      // pop from sp
+    ldr x18,[sp,#24]                    // pop from sp
+    ldr x17,[sp,#32]                    // pop from sp
+    ldr x22,[sp,#16]                    // pop from sp
+    ldr x24,[sp,#48]                    // pop from sp                
+
+    add sp,sp,#64                       // mem free
+    ret
+    //----------------------------------------------- end paint line_hr
+
+    
