@@ -10,14 +10,6 @@
 // Dibuja un rectángulo rellenado con un color especificado
 // en el framebuffer.
 //
-// Parámetros de entrada (según la convención de llamada AArch64):
-// X0: x_start - Coordenada X del píxel de inicio (superior izquierda).
-// X1: y_start - Coordenada Y del píxel de inicio (superior izquierda).
-// X2: width - Ancho del rectángulo en píxeles.
-// X3: height - Alto del rectángulo en píxeles.
-// W4: color - Color ARGB de 32 bits (Alpha, Rojo, Verde, Azul).
-// X5: fb_base_addr - Dirección base del framebuffer.
-//
 // Registros modificados: X10, X11 (temporales), X25, X26, X27, X28, X29 (contadores/cálculos).
 // Preserva: Registros callee-saved (X19-X30, incluyendo LR).
 
