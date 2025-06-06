@@ -114,273 +114,281 @@ end_hor_line_n:                                 //
     //----------------------------------------------- end paint_sky_night
 
 
-    //-----------------------------------------------
-    // fore_ground
-    // Dibuja lomas/terreno con líneas inclinadas
-.globl fore_ground      // Exporta la etiqueta para que sea visible desde el linker/otros archivos
+    //----------------------------------------------- paint fore_ground
+    //
+    //  en base a line_hr se colorean progresivamente lineas para formar el terreno
+    //
 fore_ground:
-    sub     sp, sp, #64                // reservar espacio en stack
+    sub sp,sp,#64                               // mem alloc
 
-    str     lr,  [sp]                  // guardar lr
-    str     x10, [sp, #8]              // guardar color
-    str     x8,  [sp, #16]             // guardar contador filas
-    str     x9,  [sp, #24]             // guardar offset X
-    str     x15, [sp, #32]             // guardar Y
-    str     x16, [sp, #40]             // guardar X inicio
-    str     x20, [sp, #48]             // guardar X fin
+    str lr,[sp]                                 // push to sp 
+    str x10,[sp,#8]                             // push to sp 
+    str x8,[sp,#16]                             // push to sp 
+    str x9,[sp,#24]                             // push to sp 
+    str x15,[sp,#32]                            // push to sp
+    str x16,[sp,#40]                            // push to sp color 
+    str x20,[sp,#80]                            // push to sp 
 
-    // Bloque principal de loma (0x00265430)
-    movz    w10, #0x0026, lsl 16       // w10 = 0x00260000
-    movk    w10, #0x5430               // w10 = 0x00265430
-    mov     x16, 600                  // X inicio
-    mov     x20, 640                  // X fin
-    mov     x15, 270                  // Y inicial
-    mov     x8, 6                     // grosor en filas
-    mov     x9, 70                    // offset X por paso
+
+    movz w10, #0x0026,lsl 16                    // color
+    movk w10, #0x5430                           // --
+
+
+    mov x16,600                                 // movemos a x16(start X) el valor 600
+    mov x20,640                                 // movemos a x20(end X)   el valor 640
+    mov x15,270                                 // movemos Y1 a x15(altura de linea)
+
+    mov x8,6                                    // contador filas
+    mov x9,70                                   // offset inicial start X
 
 loop_fore_ground_0:
-    cmp     x15, 480                  // si Y >= 480, saltar
-    b.eq    det_lines_R
-    bl      paint_line_hr             // dibuja línea
-    add     x15, x15, #1
-    sub     x8, x8, #1
-    cbnz    x8, loop_fore_ground_0
-    mov     x8, 6
-    sub     x16, x16, x9              // desplazar X inicio
-    cmp     x9, 0
-    b.le    loop_fore_ground_0
-    sub     x9, x9, #4
-    b       loop_fore_ground_0
+    cmp x15,480                                 // while x15 != ultima fila
+    b.eq det_lines_R                            // si x15 == 480 fin loop
+    bl paint_line_hr                            // colorea linea
+    add x15,x15,1                               // siguiente fila
+    sub x8,x8,1                                 // decrementa contador filas
+    cbnz x8,loop_fore_ground_0                  // while x8 != vuelvo al inicio
+    mov x8,6                                    // reinicio contador filas
+    sub x16,x16,x9                              // restamos el offset a start X
+    cmp x9,0                                    //  --
+    b.le loop_fore_ground_0                     // si el offset es <= 0 no lo seguimos reduciendo
+    sub x9,x9,4                                 // reducimos el offset
+    b loop_fore_ground_0                        // fin loop
 
-det_lines_R:
-    // Detalles de la loma (color 0x00387144)
-    mov     x16, 600
-    mov     x20, 640
-    mov     x15, 270
-    movz    w10, #0x0038, lsl 16      // w10 = 0x00380000
-    movk    w10, #0x7144              // w10 = 0x00387144
-    mov     x8, 6
-    mov     x9, 70
+det_lines_R:                                    // pinta lineas de color distinto para gregar detalle
 
-det_lines_0:
-    cmp     x15, 480
-    b.eq    cont_foreground
-    add     x15, x15, #1
-    sub     x8, x8, #1
-    cbnz    x8, det_lines_0
-    bl      paint_line_hr
-    mov     x8, 6
-    sub     x16, x16, x9
-    cmp     x9, 0
-    b.le    det_lines_0
-    sub     x9, x9, #4
-    b       det_lines_0
+    mov x16,600                                 // movemos a x16(start X) el valor 600
+    mov x20,640                                 // movemos a x20(end X)   el valor 640
+    mov x15,270                                 // movemos Y1 a x15(altura de linea)
+
+    movz w10, #0x0038,lsl 16                    //  cambio color
+    movk w10, #0x7144                           //  --
+
+    mov x8,6                                    // contador filas
+    mov x9,70                                   // offset inicial start X
+
+det_lines_0:                                    // idem loop anterior, que colorea una linea cada x8
+    cmp x15,480                                 //  --  
+    b.eq cont_foreground                        //  --
+    add x15,x15,1                               //  -- 
+    sub x8,x8,1                                 //  --  
+    cbnz x8,det_lines_0                         //  --  
+    bl paint_line_hr                            //  -- 
+    mov x8,6                                    //  --  
+    sub x16,x16,x9                              //  --  
+    cmp x9,0                                    //  --
+    b.le det_lines_0                            //  -- 
+    sub x9,x9,4                                 //  -- 
+    b det_lines_0                               //  -- 
 
 cont_foreground:
-    // Segundo bloque de loma en la parte izquierda
-    movz    w10, #0x0038, lsl 16      // w10 = 0x00380000
-    movk    w10, #0x7144              // w10 = 0x00387144
-    mov     x16, 0
-    mov     x20, 2
-    mov     x15, 280
-    mov     x8, 5
-    mov     x9, 60
 
-loop_fore_ground_1:
-    cmp     x15, 480
-    b.eq    det_lines_L
-    bl      paint_line_hr
-    add     x15, x15, #1
-    sub     x8, x8, #1
-    cbnz    x8, loop_fore_ground_1
-    mov     x8, 5
-    add     x20, x20, x9
-    cmp     x9, 0
-    b.le    loop_fore_ground_1
-    sub     x9, x9, #2
-    b       loop_fore_ground_1
+    movz w10, #0x0038,lsl 16                    // cambio color
+    movk w10, #0x7144                           //  --
 
-det_lines_L:
-    // Detalles de la loma izquierda (color 0x00265430)
-    movz    w10, #0x0026, lsl 16      // w10 = 0x00260000
-    movk    w10, #0x5430              // w10 = 0x00265430
-    mov     x16, 0
-    mov     x20, 2
-    mov     x15, 280
-    mov     x8, 5
-    mov     x9, 60
+    mov x16,0                                   // movemos a x16(start X) el valor 0
+    mov x20,2                                   // movemos a x20(end X)   el valor 2
+    mov x15,280                                 // movemos Y1 a x15(altura de linea)
 
-det_lines_1:
-    cmp     x15, 480
-    b.eq    end_foreground
-    add     x15, x15, #1
-    sub     x8, x8, #1
-    cbnz    x8, det_lines_1
-    bl      paint_line_hr
-    mov     x8, 5
-    add     x20, x20, x9
-    cmp     x9, 0
-    b.le    det_lines_1
-    sub     x9, x9, #2
-    b       det_lines_1
+    mov x8,5                                    // contador filas
+    mov x9,60                                   // offset inicial start X
+
+loop_fore_ground_1:                             // idem loop_fore_ground_0
+    cmp x15,480                                 //  --
+    b.eq det_lines_L                            //  --
+    bl paint_line_hr                            //  --
+    add x15,x15,1                               //  -- 
+    sub x8,x8,1                                 //  --
+    cbnz x8,loop_fore_ground_1                  //  --
+    mov x8,5                                    //  --
+    add x20,x20,x9                              //  --
+    cmp x9,0                                    //  --
+    b.le loop_fore_ground_1                     //  --
+    sub x9,x9,2                                 // cambia el factor de reduccion
+    b loop_fore_ground_1                        //  --
+
+det_lines_L:                                    // idem det_lines_R
+
+    movz w10, #0x0026,lsl 16                    // color
+    movk w10, #0x5430                           //  --
+
+    mov x16,0                                   //  --
+    mov x20,2                                   //  --
+    mov x15,280                                 //  -- 
+
+    mov x8,5                                    //  --
+    mov x9,60                                   //  --
+
+det_lines_1:                                    // idem det_lines_0
+    cmp x15,480                                 //  --
+    b.eq end_foreground                         //  --
+    add x15,x15,1                               //  -- 
+    sub x8,x8,1                                 //  --
+    cbnz x8,det_lines_1                         //  --
+    bl paint_line_hr                            //  --
+    mov x8,5                                    //  --
+    add x20,x20,x9                              //  --
+    cmp x9,0                                    //  --
+    b.le det_lines_1                            //  --
+    sub x9,x9,2                                 //  --
+    b det_lines_1                               //  --
 
 end_foreground:
-    // Restaurar registros y volver
-    ldr     lr,  [sp]
-    ldr     x10, [sp, #8]
-    ldr     x8,  [sp, #16]
-    ldr     x9,  [sp, #24]
-    ldr     x15, [sp, #32]
-    ldr     x16, [sp, #40]
-    ldr     x20, [sp, #48]
-    add     sp,  sp, #64
+    ldr lr,[sp]                                 // pop from sp
+    ldr x10,[sp,#8]                             // pop from sp                             
+    ldr x8,[sp,#16]                             // pop from sp                             
+    ldr x9,[sp,#24]                             // pop from sp                             
+    ldr x15,[sp,#32]                            // pop from sp                             
+    ldr x16,[sp,#40]                            // pop from sp                             
+    ldr x20,[sp,#48]                            // pop from sp                             
+
+    add sp,sp,#64                               // free mem
     ret
-    //-----------------------------------------------
+    //----------------------------------------------- end paint_fore_ground
 
-
-    //-----------------------------------------------
-    // paint_casita
-    // Dibuja una casita con cuerpo, puerta, ventanas y techo
-.globl paint_casita     // Exporta la etiqueta
+    //----------------------------------------------- paint_casita
 paint_casita:
-    sub     sp, sp, #40               // reservar espacio en stack
-    str     lr,  [sp]                 // guardar lr
-    str     x10, [sp, #8]             // guardar color
-    str     x15, [sp, #16]            // guardar Y
-    str     x16, [sp, #24]            // guardar X inicio
-    str     x20, [sp, #32]            // guardar X fin
+    sub sp,sp,#40
+    str lr,[sp]                                     // push to sp
+    str x10,[sp,#8]                                 // push to sp
+    str x15,[sp,#16]                                // push to sp
+    str x16,[sp,#24]                                // push to sp
+    str x20,[sp,#32]                                // push to sp
 
-    // Parte principal de la casa (cuerpo) color 0x00BB9766
-    mov     x16, 500                  // X inicio
-    mov     x20, 580                  // X fin
-    mov     x15, 260                  // Y inicial
-    movz    w10, #0x00BB, lsl 16      // w10 = 0x00BB0000
-    movk    w10, #0x9766              // w10 = 0x00BB9766
+    mov x16,500                                     // start_line X
+    mov x20,580                                     // end_line X
+    mov x15,260                                     // altura inicial Y
 
-loop_casita_princ:
-    cmp     x15, 300                  // hasta Y = 300
-    b.eq    end_casita_princ
-    bl      paint_line_hr             // dibuja línea del cuerpo
-    add     x15, x15, #1
-    b       loop_casita_princ
+    movz w10,#0x00bb,lsl 16                         //
+    movk w10,#0x9766                                //
 
-end_casita_princ:
-    // Frente de la casa (color 0x00957850)
-    movz    w10, #0x0095, lsl 16      // w10 = 0x00950000
-    movk    w10, #0x7850              // w10 = 0x00957850
-    mov     x16, 480
-    mov     x20, 500
-    mov     x15, 240
+loop_casita_princ:                                  //
+    cmp x15,300                                     //
+    b.eq end_casita_princ                           //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_princ                             //
+end_casita_princ:                                   //
 
-loop_casita_front:
-    cmp     x15, 300
-    b.eq    end_casita_front
-    bl      paint_line_hr             // dibuja línea frontal
-    add     x15, x15, #1
-    b       loop_casita_front
+    movz w10,#0x0095,lsl 16                         //
+    movk w10,#0x7850                                //
 
-end_casita_front:
-    // Puerta (color 0x0097641F)
-    movz    w10, #0x0097, lsl 16      // w10 = 0x00970000
-    movk    w10, #0x641F              // w10 = 0x0097641F
-    mov     x16, 485
-    mov     x20, 495
-    mov     x15, 280
+    mov x16,480                                     // start_line X
+    mov x20,500                                     // end_line X
+    mov x15,240                                     // altura inicial Y
 
-loop_casita_puerta:
-    cmp     x15, 300
-    b.eq    end_casita_puerta
-    bl      paint_line_hr             // dibuja línea de puerta
-    add     x15, x15, #1
-    b       loop_casita_puerta
+loop_casita_front:                                  //
+    cmp x15,300                                     //
+    b.eq end_casita_front                           //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_front                             //
 
-end_casita_puerta:
-    // Ventanas (color 0x00FFFFFF)
-    movz    w10, #0x00FF, lsl 16      // w10 = 0x00FF0000
-    movk    w10, #0xFFFF              // w10 = 0x00FFFFFF
+end_casita_front:                                   //
 
-    // Ventana izquierda
-    mov     x16, 510
-    mov     x20, 530
-    mov     x15, 275
+    movz w10,#0x0097,lsl 16                         //
+    movk w10,#0x641f                                //
 
-loop_casita_ventana_0:
-    cmp     x15, 295
-    b.eq    end_casita_ventana_0
-    bl      paint_line_hr             // dibuja línea ventana
-    add     x15, x15, #1
-    b       loop_casita_ventana_0
+    mov x16,485                                     // start_line X
+    mov x20,495                                     // end_line X
+    mov x15,280                                     // altura inicial Y
 
-end_casita_ventana_0:
-    // Ventana derecha
-    mov     x16, 550
-    mov     x20, 570
-    mov     x15, 275
+loop_casita_puerta:                                 //
+    cmp x15,300                                     //
+    b.eq end_casita_puerta                          //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_puerta                            //
 
-loop_casita_ventana_1:
-    cmp     x15, 295
-    b.eq    end_casita_ventana_1
-    bl      paint_line_hr             // dibuja línea ventana
-    add     x15, x15, #1
-    b       loop_casita_ventana_1
+end_casita_puerta:                                  //
 
-end_casita_ventana_1:
-    // Techo trasero (color 0x00972F1F)
-    movz    w10, #0x0097, lsl 16      // w10 = 0x00970000
-    movk    w10, #0x2F1F              // w10 = 0x00972F1F
-    mov     x16, 480
-    mov     x20, 580
-    mov     x15, 240
+    movz w10,#0x00ff,lsl 16                         //
+    movk w10,#0xffff                                //
 
-loop_casita_techo_back:
-    cmp     x15, 260
-    b.eq    end_casita_techo_back
-    bl      paint_line_hr             // dibuja línea techo trasero
-    add     x15, x15, #1
-    sub     x16, x16, #1              // reducir ancho trasero
-    sub     x20, x20, #1
-    b       loop_casita_techo_back
+    mov x16,510                                     // start_line X
+    mov x20,530                                     // end_line X
+    mov x15,275                                     // altura inicial Y
 
-end_casita_techo_back:
-    // Techo principal (mismo color)
-    movz    w10, #0x0097, lsl 16
-    movk    w10, #0x2F1F
-    mov     x16, 480
-    mov     x20, 580
-    mov     x15, 240
+loop_casita_ventana_0:                              //
+    cmp x15,295                                     //
+    b.eq end_casita_ventana_0                       //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_ventana_0                         //
 
-loop_casita_techo_princ:
-    cmp     x15, 260
-    b.eq    end_casita_techo_princ
-    bl      paint_line_hr             // dibuja línea techo principal
-    add     x15, x15, #1
-    add     x16, x16, #1              // ensanchar techo principal
-    add     x20, x20, #1
-    b       loop_casita_techo_princ
+end_casita_ventana_0:                               //
 
-end_casita_techo_princ:
-    // Chimenea (color 0x00504645)
-    mov     x16, 560
-    mov     x20, 570
-    mov     x15, 225
-    movz    w10, #0x0050, lsl 16      // w10 = 0x00500000
-    movk    w10, #0x4645              // w10 = 0x00504645
+    mov x16,550                                     // start_line X
+    mov x20,570                                     // end_line X
+    mov x15,275                                     // altura inicial Y
 
-loop_casita_chim:
-    cmp     x15, 250                 // comparamos Y con 250 (tope de chimenea)
-    b.eq    end_casita_chim         // si Y == 250, salimos
-    bl      paint_line_hr           // dibuja 1px de la chimenea
-    add     x15, x15, #1            // incrementa Y
-    b       loop_casita_chim        // repite hasta llegar a 250
+loop_casita_ventana_1:                              //
+    cmp x15,295                                     //
+    b.eq end_casita_ventana_1                       //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_ventana_1                         //
 
-end_casita_chim:
-    // Restaurar registros y regresar
-    ldr     lr,  [sp]
-    ldr     x10, [sp, #8]
-    ldr     x15, [sp, #16]
-    ldr     x16, [sp, #24]
-    ldr     x20, [sp, #32]
-    add     sp,  sp, #40
+end_casita_ventana_1:                               //
+
+    movz w10,#0x005a,lsl 16                         //
+    movk w10,#0x1f15                                //
+
+    mov x16,480                                     // start_line X
+    mov x20,500                                     // end_line X
+    mov x15,240                                     // altura inicial Y
+
+loop_casita_techo_back:                             //
+    cmp x15,260                                     //
+    b.eq end_casita_techo_back                      //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    sub x16,x16,1                                   //
+    sub x20,x20,1                                   //
+    b loop_casita_techo_back                        //
+
+end_casita_techo_back:                              //
+
+    movz w10,#0x0097,lsl 16                         //
+    movk w10,#0x2f1f                                //
+
+    mov x16,480                                     // start_line X
+    mov x20,580                                     // end_line X
+    mov x15,240                                     // altura inicial Y
+
+loop_casita_techo_princ:                            //
+    cmp x15,260                                     //
+    b.eq end_casita_techo_princ                     //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    add x16,x16,1                                   //
+    add x20,x20,1                                   //
+    b loop_casita_techo_princ                       //
+
+end_casita_techo_princ:                             //
+
+    mov x16,560                                     // start_line X
+    mov x20,570                                     // end_line X
+    mov x15,225                                     // altura inicial Y
+
+    movz w10,#0x0050,lsl 16                         //
+    movk w10,#0x4645                                //
+
+loop_casita_chim:                                   //
+    cmp x15,250                                     //
+    b.eq end_casita_chim                            //
+    bl paint_line_hr                                //
+    add x15,x15,1                                   //
+    b loop_casita_chim                              //
+
+end_casita_chim:                                    //
+
+    ldr lr,[sp]                                     //
+    ldr x10,[sp,#8]                                 //
+    ldr x15,[sp,#16]                                //
+    ldr x16,[sp,#24]                                //
+    ldr x20,[sp,#32]                                //
+
+    add sp,sp,#40                                   //
     ret
-
-
+    //----------------------------------------------- end paint_casita
