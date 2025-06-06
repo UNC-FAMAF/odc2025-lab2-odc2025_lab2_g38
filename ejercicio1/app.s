@@ -4,12 +4,8 @@
 .equ SCREEN_HEIGH, 480
 .equ BITS_PER_PIXEL, 32
 
-.equ GPIO_BASE, 0x3f200000
-.equ GPIO_GPFSEL0, 0x00
-.equ GPIO_GPLEV0, 0x34
-
 .extern draw_rectangle
-.extern draw_string_OdC2025
+.extern draw_odc2025
 
 .globl main
 
@@ -24,40 +20,17 @@ main:
 	bl fore_ground							//	definicion en "object_graph_funs.s" pinta las lomas
 	bl paint_casita							//	definicion en "object_graph_funs.s" pinta la casita
     
-    //---------------- CODE FOR "OdC 2025" TEXT --------------------
-    // Llama a la subrutina para dibujar la frase "OdC 2025".
-    // x0: x_start
-    // x1: y_start
-    // w2: color (32-bit ARGB)
-    // x3: framebuffer_base_address (x20)
+    //---------------- CODE FOR "OdC 2025" TEXT -------------------- 
+    // Llama a la subrutina para dibujar la frase "OdC 2025"
 
-    mov x0, #300 // x_start para la frase
-    mov x1, #400 // y_start para la frase
-    mov w2, #0xFF00FF00 // color = Verde (Alpha=FF, Rojo=00, Verde=FF, Azul=00)
-    mov x3, x23 // framebuffer_base_address
-    bl draw_string_OdC2025 // Llama a la nueva subrutina para dibujar la frase "OdC 2025"
+    mov x0, x23             // Framebuffer base
+    mov x1, #50             // Posición X
+    mov x2, #400             // Posición Y
+    movz w3, #0xFF, lsl 16
+    movk w3, #0x6666, lsl 00   // Color del texto
+    bl draw_odc2025         // Llama a la función de draw_text.s.
 
-    // ---------------- END OF TEXT CODE ----------------------------
-
-	// Ejemplo de uso de gpios
-	mov x9, GPIO_BASE
-
-	// Atención: se utilizan registros w porque la documentación de broadcom
-	// indica que los registros que estamos leyendo y escribiendo son de 32 bits
-
-	// Setea gpios 0 - 9 como lectura
-	str wzr, [x9, GPIO_GPFSEL0]
-
-	// Lee el estado de los GPIO 0 - 31
-	ldr w10, [x9, GPIO_GPLEV0]
-
-	// And bit a bit mantiene el resultado del bit 2 en w10
-	and w11, w10, 0b10
-
-	// w11 será 1 si había un 1 en la posición 2 de w10, si no será 0
-	// efectivamente, su valor representará si GPIO 2 está activo
-	lsr w11, w11, 1
-
+    // ---------------- END OF TEXT CODE ---------------------------
 	//---------------------------------------------------------------
 	// Infinite Loop
 
