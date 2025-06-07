@@ -8,7 +8,7 @@ Integrante 4: Gabriel Bustos
 Descripción ejercicio 1: Se muestra una casita en el campo, de noche con una luna grande y un campo de flores que forman 
 "OdC 2025".
 
-Descripción ejercicio 2: Se muestra una luna animada que se mueve de izquierda a derecha
+Descripción ejercicio 2: Se muestra una luna animada que se mueve de izquierda a derecha y el cielo cambia de color
 
 
 Justificación instrucciones ARMv8:
