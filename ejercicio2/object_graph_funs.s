@@ -1,60 +1,81 @@
-    .include "graph_funs.s"
-	.equ SCREEN_WIDTH,   640
-	.equ SCREEN_HEIGH,   480
-    .equ BITS_PER_PIXEL, 32
+.equ SCREEN_WIDTH,   640
+.equ SCREEN_HEIGH,   480
+.equ BITS_PER_PIXEL, 32
+
+.extern upper_half
+.extern background_paint
+.extern draw_circle
+.extern draw_line_hr
+.extern draw_pixel
+.extern draw_rectangle
+
+.global paint_sky_night
+.global paint_moon
+.global fore_ground
+.global paint_casita
+.global restore_background_at
 
     //----------------------------------------------- paint_moon
-    //
-    //
-    //  pinta una luna de color amarillo 
-    //
-    //
+    // paint_moon espera en x5 (Y centro) y x6 (X centro) la posición de la luna
 paint_moon:
-    sub sp,sp,#48                   // mem alloc
-    str lr,[sp]                     // push to sp
-    str x5,[sp,#8]                  // push to sp
-    str x6,[sp,#16]                 // push to sp
-    str x7,[sp,#24]                 // push to sp
-    str x8,[sp,#32]                 // push to sp
-    str x10,[sp,#40]                // push to sp
+    sub sp,sp,#48
+    str lr,[sp]
+    str x5,[sp,#8]
+    str x6,[sp,#16]
+    str x7,[sp,#24]
+    str x8,[sp,#32]
+    str x10,[sp,#40]
 
-    // CIRCULOS LUNA
+    // Dibuja la luna (círculo blanco) en (x6, x5)
+    mov x8,80
+    mul x7,x8,x8
+    movz w10,#0xFFFF
+    movk w10,#0xFFFF, lsl 16
+    bl draw_circle
 
-    movz x10,#0xFA,lsl 16         //color
-    movk x10,#0xF328                //color
+    // Cráter 1 (gris claro)
+    sub x5,x5,30         // Y = centroY - 30
+    add x6,x6,20         // X = centroX + 20
+    mov x8,18
+    mul x7,x8,x8
+    movz w10,#0xCCCC
+    movk w10,#0xCCCC, lsl 16
+    bl draw_circle
 
-    mov x5,400                      // Y
-    mov x6,550                      // X
+    // Cráter 2 (gris medio)
+    add x5,x5,50         // Y = centroY + 20
+    sub x6,x6,30         // X = centroX - 10
+    mov x8,12
+    mul x7,x8,x8
+    movz w10,#0xAAAA
+    movk w10,#0xAAAA, lsl 16
+    bl draw_circle
 
-    mov x8,80                       // r
-    mul x7,x8,x8                    // r^2
+    // Cráter 3 (gris oscuro)
+    sub x5,x5,30         // Y = centroY - 10
+    sub x6,x6,10         // X = centroX - 20
+    mov x8,10
+    mul x7,x8,x8
+    movz w10,#0x8888
+    movk w10,#0x8888, lsl 16
+    bl draw_circle
 
-    bl paint_circle
+    // Cráter 4 (gris muy claro)
+    add x5,x5,20         // Y = centroY + 10
+    add x6,x6,50         // X = centroX + 30
+    mov x8,8
+    mul x7,x8,x8
+    movz w10,#0xEEEE
+    movk w10,#0xEEEE, lsl 16
+    bl draw_circle
 
-    movz x10,#0xFC,lsl 16         //color
-    movk x10,#0xF760                //color
-
-    sub x8,x8,5                     // disminuyo radio
-    mul x7,x8,x8                    // r^2
-
-    bl paint_circle
-
-    movz x10,#0xF5,lsl 16         //color
-    movk x10,#0xF17C                //color
-
-    sub x8,x8,20                    // disminuyo radio
-    mul x7,x8,x8                    // r^2
-
-    bl paint_circle
-
-    ldr lr,[sp]                     // pop from sp
-    ldr x5,[sp,#8]                  // pop from sp
-    ldr x6,[sp,#16]                 // pop from sp
-    ldr x7,[sp,#24]                 // pop from sp
-    ldr x8,[sp,#32]                 // pop from sp
-    ldr x10,[sp,#40]                // pop from sp
-
-    add sp,sp,#48                   // mem free
+    ldr lr,[sp]
+    ldr x5,[sp,#8]
+    ldr x6,[sp,#16]
+    ldr x7,[sp,#24]
+    ldr x8,[sp,#32]
+    ldr x10,[sp,#40]
+    add sp,sp,#48
     ret
     //----------------------------------------------- end paint_moon 
 
@@ -93,11 +114,11 @@ paint_sky_night:
 
 loop_hor_lines_n:                               //
     cbz x15, end_hor_line_n                     //
-    bl paint_line_hr                            //
+    bl draw_line_hr                            //
     sub x15,x15,1                               //
-    bl paint_line_hr                            //
+    bl draw_line_hr                            //
     sub x15,x15,1                               //
-    bl paint_line_hr                            //
+    bl draw_line_hr                            //
     sub x15,x15,x11                             //
     add x11,x11,2                               //
     b loop_hor_lines_n                          //
@@ -145,7 +166,7 @@ fore_ground:
 loop_fore_ground_0:
     cmp x15,480                                 // while x15 != ultima fila
     b.eq det_lines_R                            // si x15 == 480 fin loop
-    bl paint_line_hr                            // colorea linea
+    bl draw_line_hr                            // colorea linea
     add x15,x15,1                               // siguiente fila
     sub x8,x8,1                                 // decrementa contador filas
     cbnz x8,loop_fore_ground_0                  // while x8 != vuelvo al inicio
@@ -174,7 +195,7 @@ det_lines_0:                                    // idem loop anterior, que color
     add x15,x15,1                               //  -- 
     sub x8,x8,1                                 //  --  
     cbnz x8,det_lines_0                         //  --  
-    bl paint_line_hr                            //  -- 
+    bl draw_line_hr                            //  -- 
     mov x8,6                                    //  --  
     sub x16,x16,x9                              //  --  
     cmp x9,0                                    //  --
@@ -197,7 +218,7 @@ cont_foreground:
 loop_fore_ground_1:                             // idem loop_fore_ground_0
     cmp x15,480                                 //  --
     b.eq det_lines_L                            //  --
-    bl paint_line_hr                            //  --
+    bl draw_line_hr                            //  --
     add x15,x15,1                               //  -- 
     sub x8,x8,1                                 //  --
     cbnz x8,loop_fore_ground_1                  //  --
@@ -210,15 +231,15 @@ loop_fore_ground_1:                             // idem loop_fore_ground_0
 
 det_lines_L:                                    // idem det_lines_R
 
+    mov x16,600                                 // movemos a x16(start X) el valor 600
+    mov x20,640                                 // movemos a x20(end X)   el valor 640
+    mov x15,270                                 // movemos Y1 a x15(altura de linea)
+
     movz w10, #0x0026,lsl 16                    // color
     movk w10, #0x5430                           //  --
 
-    mov x16,0                                   //  --
-    mov x20,2                                   //  --
-    mov x15,280                                 //  -- 
-
-    mov x8,5                                    //  --
-    mov x9,60                                   //  --
+    mov x8,6                                    // contador filas
+    mov x9,70                                   // offset inicial start X
 
 det_lines_1:                                    // idem det_lines_0
     cmp x15,480                                 //  --
@@ -226,8 +247,8 @@ det_lines_1:                                    // idem det_lines_0
     add x15,x15,1                               //  -- 
     sub x8,x8,1                                 //  --
     cbnz x8,det_lines_1                         //  --
-    bl paint_line_hr                            //  --
-    mov x8,5                                    //  --
+    bl draw_line_hr                            //  --
+    mov x8,6                                    //  --
     add x20,x20,x9                              //  --
     cmp x9,0                                    //  --
     b.le det_lines_1                            //  --
@@ -266,7 +287,7 @@ paint_casita:
 loop_casita_princ:                                  //
     cmp x15,300                                     //
     b.eq end_casita_princ                           //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_princ                             //
 end_casita_princ:                                   //
@@ -281,7 +302,7 @@ end_casita_princ:                                   //
 loop_casita_front:                                  //
     cmp x15,300                                     //
     b.eq end_casita_front                           //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_front                             //
 
@@ -297,7 +318,7 @@ end_casita_front:                                   //
 loop_casita_puerta:                                 //
     cmp x15,300                                     //
     b.eq end_casita_puerta                          //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_puerta                            //
 
@@ -313,7 +334,7 @@ end_casita_puerta:                                  //
 loop_casita_ventana_0:                              //
     cmp x15,295                                     //
     b.eq end_casita_ventana_0                       //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_ventana_0                         //
 
@@ -326,7 +347,7 @@ end_casita_ventana_0:                               //
 loop_casita_ventana_1:                              //
     cmp x15,295                                     //
     b.eq end_casita_ventana_1                       //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_ventana_1                         //
 
@@ -342,7 +363,7 @@ end_casita_ventana_1:                               //
 loop_casita_techo_back:                             //
     cmp x15,260                                     //
     b.eq end_casita_techo_back                      //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     sub x16,x16,1                                   //
     sub x20,x20,1                                   //
@@ -360,7 +381,7 @@ end_casita_techo_back:                              //
 loop_casita_techo_princ:                            //
     cmp x15,260                                     //
     b.eq end_casita_techo_princ                     //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     add x16,x16,1                                   //
     add x20,x20,1                                   //
@@ -378,7 +399,7 @@ end_casita_techo_princ:                             //
 loop_casita_chim:                                   //
     cmp x15,250                                     //
     b.eq end_casita_chim                            //
-    bl paint_line_hr                                //
+    bl draw_line_hr                                //
     add x15,x15,1                                   //
     b loop_casita_chim                              //
 
@@ -393,3 +414,24 @@ end_casita_chim:                                    //
     add sp,sp,#40                                   //
     ret
     //----------------------------------------------- end paint_casita
+
+
+// x5 = y centro, x6 = x centro
+restore_background_at:
+    sub sp, sp, #16
+    str lr, [sp]
+    str x10, [sp, #8]
+
+    // Color sólido del cielo (ajusta si tu color de fondo cambia)
+    movz w10, #0x17, lsl 16
+    movk w10, #0x0972
+
+    // Dibuja un círculo del color del cielo en la posición de la luna anterior
+    mov x8, 80
+    mul x7, x8, x8
+    bl draw_circle
+
+    ldr lr, [sp]
+    ldr x10, [sp, #8]
+    add sp, sp, #16
+    ret
