@@ -1,40 +1,58 @@
-	.equ SCREEN_WIDTH, 		640
-	.equ SCREEN_HEIGH, 		480
-	.equ BITS_PER_PIXEL,  	32
+.equ SCREEN_WIDTH, 640
+.equ SCREEN_HEIGH, 480
+.equ BITS_PER_PIXEL, 32
 
-  	.equ COLOR_YELLOW, 0xFFFF00
+.extern paint_sky_night
+.extern paint_moon
+.extern fore_ground
+.extern paint_casita
+.extern update_moon_position
+.extern restore_background_at
 
-	.globl main
+.extern draw_rectangle
+.extern draw_odc2025
+
+.extern moon_x
+.extern moon_y
+.extern moon_x_prev
+.extern moon_y_prev
+
+.globl main
 
 main:
-	// x0 contiene la direccion base del framebuffer
- 	mov x20, x0	// Guarda la dirección base del framebuffer en x20
-	//---------------- CODE HERE ------------------------------------
+    // x0 contiene la direccion base del framebuffer
+    mov x20, x0 // Guarda la dirección base del framebuffer en x20 
+    mov x23, x20
 
-	movz x10, 0xC7, lsl 16
-	movk x10, 0x1585, lsl 00
+    // Dibuja objetos estáticos SOLO UNA VEZ
+    bl paint_sky_night
+    bl fore_ground
+    mov x0, x23
+    mov x1, #50
+    mov x2, #400
+    movz w3, #0xFF, lsl 16
+    movk w3, #0x6666, lsl 00
+    bl draw_odc2025
+    bl paint_casita
 
-	mov x2, SCREEN_HEIGH         // Y Size
-loop1:
-	mov x1, SCREEN_WIDTH         // X Size
-loop0:
-	stur w10,[x0]  // Colorear el pixel N
-	add x0,x0,4	   // Siguiente pixel
-	sub x1,x1,1	   // Decrementar contador X
-	cbnz x1,loop0  // Si no terminó la fila, salto
-	sub x2,x2,1	   // Decrementar contador Y
-	cbnz x2,loop1  // Si no es la última fila, salto
+LoopAnim:
+    // Actualiza la posición de la luna
+    bl update_moon_position
 
- 	// Dibujar la inscripción "OdC 2025" 
-	// Se dibuja en una posición fija (parte superior izquierda) con un color amarillo.
-	mov x0, x20             // Framebuffer base
-	mov x1, #10             // Posición X
-	mov x2, #10             // Posición Y
-	mov w3, #COLOR_YELLOW   // Color del texto
-	bl draw_odc2025         // Llama a la función de draw_text.s.
+    
+    // Dibujar la luna en la nueva posición
+    ldr x1, =moon_x
+    ldr w6, [x1]
+    ldr x1, =moon_y
+    ldr w5, [x1]
+    bl paint_moon
 
-	//---------------------------------------------------------------
-	// Infinite Loop
+    // Restaurar el fondo donde estaba la luna anterior
+    ldr x1, =moon_x_prev
+    ldr w6, [x1]
+    ldr x1, =moon_y_prev
+    ldr w5, [x1]
+    bl restore_background_at
 
-InfLoop:
-	b InfLoop
+    b LoopAnim
+
